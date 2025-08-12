@@ -2,7 +2,7 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=java,gradle,intellij+all,windows,visualstudiocode,macos
 
 # 빌드 도중 bin 디렉토리가 생길 경우 무시
-/bin
+/bin 
 
 ### Intellij+all ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
