@@ -13,6 +13,6 @@ public class JPAConfig {
 
     @Bean
     public AuditorAware<String> auditorAware() {
-        return () -> Optional.of("arile")
+        return () -> Optional.of("arile");
     }
 }
