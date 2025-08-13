@@ -20,20 +20,33 @@ import java.util.Set;
 
 @Getter
 @ToString(callSuper = true)
+@Table(uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"userId", "schemaName"}) // 순서가 중요 : userId로 먼저 검색 후 schemaName으로 검핵 (schemaName은 다른 userId에 대해 같은 것을 가질 수 잇다.)
+},
+        indexes = {
+                @Index(columnList = "createdAt"),
+                @Index(columnList = "modifiedAt")
+        })
 @Entity
-public class TableSchema extends AuditingFields{
+public class TableSchema extends AuditingFields {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Setter @Column(nullable = false) private String schemaName;
-    @Setter @Column(nullable = false) private String userId;
+    @Setter
+    @Column(nullable = false)
+    private String schemaName;
+    @Setter
+    @Column(nullable = false)
+    private String userId;
 
-    @Setter private LocalDateTime exportedAt; // null 일 수 있다
+    @Setter
+    private LocalDateTime exportedAt; // null 일 수 있다
 
     // final은 합당 : 여기에 새로운 LinkedHashSet을 넣는 것이 아닌 단순 add, delete만 하므로
     @ToString.Exclude
+    @OrderBy("fieldOrder ASC")
     @OneToMany(mappedBy = "tableSchema", cascade = CascadeType.ALL, orphanRemoval = true)
     private final Set<SchemaField> schemaFields = new LinkedHashSet<>(); // 순서가 있는 set : 필드는 순서가 있다.
 
@@ -59,12 +72,12 @@ public class TableSchema extends AuditingFields{
         return new TableSchema(schemaName, userId);
     }
 
-    public void addSchemaField(SchemaField schemaField){
+    public void addSchemaField(SchemaField schemaField) {
         schemaFields.add(schemaField);
         schemaField.setTableSchema(this);
     }
 
-    public void addSchemaFields(Collection<SchemaField> schemaFields){
+    public void addSchemaFields(Collection<SchemaField> schemaFields) {
         schemaFields.forEach(this::addSchemaField);
     }
 
