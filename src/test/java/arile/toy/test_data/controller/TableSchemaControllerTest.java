@@ -1,6 +1,10 @@
 package arile.toy.test_data.controller;
 
 import arile.toy.test_data.config.SecurityConfig;
+import arile.toy.test_data.domain.constant.MockDataType;
+import arile.toy.test_data.dto.request.SchemaFieldRequest;
+import arile.toy.test_data.dto.request.TableSchemaRequest;
+import arile.toy.test_data.util.FormDataEncoder;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,6 +15,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -18,9 +24,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @Disabled("아직 테스트만 다루므로 테스트를 먼저 작성함. 테스트의 스펙을 전달하고, 아직 구현이 없으므로 빟활성화.")
 @DisplayName("[Controller] 테이블 스키마 컨트룰러 테스트")
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, FormDataEncoder.class})
 @WebMvcTest
-public record TableSchemaControllerTest(@Autowired MockMvc mvc) {
+public record TableSchemaControllerTest(@Autowired MockMvc mvc,
+                                        @Autowired FormDataEncoder formDataEncoder) {
 
     @DisplayName("[GET] 테이블 스키마 페이지 -> 테이블 스키마 뷰 (정상)")
     @Test
@@ -38,10 +45,19 @@ public record TableSchemaControllerTest(@Autowired MockMvc mvc) {
     @Test
     void givenTableSchemaRequest_whenCreatingOrUpdating_thenRedirectsToTableSchemaView() throws Exception { // redirect : 저장, 수정 후 table schema view로 돌아올 것
         // Given (테이블 스키마 request 생성)
+        TableSchemaRequest request = TableSchemaRequest.of(
+                "test-schema",
+                "홍길동",
+                List.of(
+                        SchemaFieldRequest.of("id", MockDataType.ROW_NUMBER, 1, 0, null, null),
+                        SchemaFieldRequest.of("name", MockDataType.NAME, 2, 10, null, null),
+                        SchemaFieldRequest.of("age", MockDataType.NUMBER, 3, 20, null, null)
+                )
+        );
 
         // When & Then
         mvc.perform(post("/table-schema")
-                        .content("sample data") // post에 data가 들어갈 것 : 여기는 나중에 바꿔야 함.
+                        .content(formDataEncoder.encode(request)) // post에 data가 들어갈 것 : 여기는 나중에 바꿔야 함. (변경 완료)
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED) // APPLICATION_JSON type이 아닌 form 요청
                         .with(csrf()) // 이 POST 요청은 자동으로 csrf정보가 포함해서 들어가게 될 것.
                 )
