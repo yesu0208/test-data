@@ -1,14 +1,13 @@
 package arile.toy.test_data.controller;
 
-
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
-public class MainController {
+public class UserAccountController {
 
-    @GetMapping("/")
-    public String root() {
-        return "forward:/table-schema"; // 기본 페이지를 주로 index라 함.
+    @GetMapping("/my-account")
+    public String myAccount() {
+        return "my-account";
     }
 }
