@@ -23,18 +23,18 @@ public abstract class AuditingFields {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) // 표준 date로 변경 (ISO)
     @CreatedDate // 자동으로 setting
     @Column(nullable = false, updatable = false) // 생성과 관련된 정보는 update 되어서는 안된다.
-    private LocalDateTime createdAt;
+    protected LocalDateTime createdAt; // protected : 자식 class가 참조할 수 있도록 private(x)
 
     @CreatedBy
     @Column(nullable = false, updatable = false)
-    private String createdBy;
+    protected String createdBy;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     @LastModifiedDate
     @Column(nullable = false)
-    private LocalDateTime modifiedAt;
+    protected LocalDateTime modifiedAt;
 
     @LastModifiedBy
     @Column(nullable = false)
-    private String modifiedBy;
+    protected String modifiedBy;
 }

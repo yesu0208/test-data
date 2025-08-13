@@ -30,10 +30,10 @@ public class SchemaField extends AuditingFields{
     @ManyToOne(optional = false)
     private TableSchema tableSchema;
 
-    @Setter private @Column(nullable = false) String fieldName;
-    @Setter private @Column(nullable = false) MockDataType mockDataType;
-    @Setter private @Column(nullable = false) Integer fieldOrder;
-    @Setter private @Column(nullable = false) Integer blankPercent;
+    @Setter @Column(nullable = false) private String fieldName;
+    @Setter @Column(nullable = false) @Enumerated(EnumType.STRING) private MockDataType mockDataType;
+    @Setter @Column(nullable = false) private Integer fieldOrder;
+    @Setter @Column(nullable = false) private Integer blankPercent;
 
     @Setter private String typeOptionJson; // 이것은 없을 수도 있다. (Option)
     @Setter private String forceValue; // 값을 랜던생성 안하고 수기로 직접 넣을 것인가? 없을 수도 있다.
