@@ -3,7 +3,7 @@ debug: false
 logging:
   level:
     arile.toy.test_data: debug
-    org.springframework.web.servlet: debug
+    org.springframework.web.servlet: debug # 실제 서비스에는 info로 변경. 다 비용이다.
     org.hibernate.orm.jdbc.bind: trace
     org.springframework.test.context.transaction.TransactionContext: debug
 
