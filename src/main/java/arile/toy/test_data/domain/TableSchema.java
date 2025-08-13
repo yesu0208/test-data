@@ -27,17 +27,10 @@ public class TableSchema extends AuditingFields{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Setter
-    private String schemaName;
-    @Setter
-    private String userId;
-    @Setter
-    private LocalDateTime exportedAt;
+    @Setter @Column(nullable = false) private String schemaName;
+    @Setter @Column(nullable = false) private String userId;
 
-    private LocalDateTime createdAt;
-    private String createdBy;
-    private LocalDateTime modifiedAt;
-    private String modifiedBy;
+    @Setter private LocalDateTime exportedAt; // null 일 수 있다
 
     // final은 합당 : 여기에 새로운 LinkedHashSet을 넣는 것이 아닌 단순 add, delete만 하므로
     @ToString.Exclude
@@ -52,7 +45,7 @@ public class TableSchema extends AuditingFields{
         return exportedAt != null;
     }
 
-    public void makeExported() {
+    public void markExported() {
         exportedAt = LocalDateTime.now();
     }
 
