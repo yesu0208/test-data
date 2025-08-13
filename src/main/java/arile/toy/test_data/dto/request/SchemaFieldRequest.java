@@ -14,6 +14,24 @@ public record SchemaFieldRequest( // id, auditing 필요 x
         String forceValue
         ) {
 
+    public static SchemaFieldRequest of(
+            String fieldName,
+            MockDataType mockDataType,
+            Integer fieldOrder,
+            Integer blankPercent,
+            String typeOptionJson,
+            String forceValue
+    ){
+        return new SchemaFieldRequest(
+                fieldName,
+                mockDataType,
+                fieldOrder,
+                blankPercent,
+                typeOptionJson,
+                forceValue
+                );
+    }
+
     // request -> Dto
     public SchemaFieldDto toDto() {
         return SchemaFieldDto.of(
