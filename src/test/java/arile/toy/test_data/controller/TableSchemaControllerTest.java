@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@Disabled("아직 테스트만 다루므로 테스트를 먼저 작성함. 테스트의 스펙을 전달하고, 아직 구현이 없으므로 빟활성화.")
+//@Disabled("아직 테스트만 다루므로 테스트를 먼저 작성함. 테스트의 스펙을 전달하고, 아직 구현이 없으므로 빟활성화.")
 @DisplayName("[Controller] 테이블 스키마 컨트룰러 테스트")
 @Import({SecurityConfig.class, FormDataEncoder.class})
 @WebMvcTest
@@ -62,6 +62,7 @@ public record TableSchemaControllerTest(@Autowired MockMvc mvc,
                         .with(csrf()) // 이 POST 요청은 자동으로 csrf정보가 포함해서 들어가게 될 것.
                 )
                 .andExpect(status().is3xxRedirection()) // 3xx : 정상 응답이지만, redirection이 일어났다는 http status code
+                .andExpect(flash().attribute("tableSchemaRequest", request)) // FlashAttribute 검증
                 .andExpect(redirectedUrl("/table-schema"));
     }
 
@@ -88,21 +89,20 @@ public record TableSchemaControllerTest(@Autowired MockMvc mvc,
                         .with(csrf())
                 )
                 .andExpect(status().is3xxRedirection()) // 3xx : 정상 응답이지만, redirection이 일어났다는 http status code
-                .andExpect(redirectedUrl("/my-schema"));
+                .andExpect(redirectedUrl("/my-schemas"));
     }
 
-    @DisplayName("[GET] 테이블 스키마 파일 다운로드 -> 테이블 싘마 파일 (정상)")
+    @DisplayName("[GET] 테이블 스키마 파일 다운로드 -> 테이블 스키마 파일 (정상)")
     @Test
     void givenTableSchema_whenDownloading_thenReturnsFile() throws Exception {
         // Given
 
         // When & Then
-        mvc.perform(post("/table-schema/export"))
+        mvc.perform(get("/table-schema/export"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)) // csv, tsv든 모두 plain type
                 // "Content-Disposition" 헤더에 "attachment; filename=table-schema.txt"이 들어있어야. (파일은 table-schema.txt으로 나올 것)
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=table-schema.txt")) // 파일 다운로드 하려면 헤더에 반드시 추가되어야 하는 내용
-                .andExpect(content().string("download complete")) // TODO: 나중에 데이터 바꿔야 함
-                .andExpect(view().name("my-schemas"));
+                .andExpect(content().string("download complete!")); // TODO: 나중에 데이터 바꿔야 함
     }
 }

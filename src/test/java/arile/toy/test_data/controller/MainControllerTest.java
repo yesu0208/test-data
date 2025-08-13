@@ -29,8 +29,9 @@ record MainControllerTest(
         // When & Then : controller test(WebMvcTest에서 이렇게 쓴다)
         mvc.perform(get("/")) // https://my-service.com/
                 .andExpect(status().isOk()) // 200 ok
-                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML)) // 자료 형식은 TEXT_HTML
-                .andExpect(view().name("index")); // view 이름은 index
+                //.andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML)) // 자료 형식은 TEXT_HTML
+                //.andExpect(view().name("index")); // view 이름은 index
+                .andExpect(forwardedUrl("/table-schema"));
                 //.andDo(print()); // 로그 출력용(정보 너무 많으니 뺀다)
     }
 }
