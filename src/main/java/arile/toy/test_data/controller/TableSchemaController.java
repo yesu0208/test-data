@@ -69,7 +69,7 @@ public class TableSchemaController {
     public String deleteMySchema(@PathVariable String schemaName,
                                  RedirectAttributes redirectAttrs
     ) {
-        return "redirect:/my-schemas";
+        return "redirect:/table-schema/my-schemas";
     }
 
     //@ResponseBody
