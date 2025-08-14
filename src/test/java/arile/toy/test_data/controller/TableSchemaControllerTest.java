@@ -153,6 +153,7 @@ class TableSchemaControllerTest {
         // Given
         var githubUser = new GithubUser("test-id", "test-name", "test@email.com");
         String schemaName = "test_schema";
+        willDoNothing().given(tableSchemaService).deleteTableSchema(githubUser.id(), schemaName); // void method는 willDoNothing
 
         // When & Then
         mvc.perform(post("/table-schema/my-schemas/{schemaName}", schemaName)
@@ -161,6 +162,7 @@ class TableSchemaControllerTest {
                 )
                 .andExpect(status().is3xxRedirection()) // 3xx : 정상 응답이지만, redirection이 일어났다는 http status code
                 .andExpect(redirectedUrl("/table-schema/my-schemas"));
+        then(tableSchemaService).should().deleteTableSchema(githubUser.id(), schemaName);
     }
 
     @DisplayName("[GET] 테이블 스키마 파일 다운로드 -> 테이블 스키마 파일 (정상)")

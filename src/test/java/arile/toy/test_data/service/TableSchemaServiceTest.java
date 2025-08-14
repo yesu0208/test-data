@@ -121,5 +121,20 @@ class TableSchemaServiceTest {
         then(tableSchemaRepository).should().save(dto.createEntity());
     }
 
+    @DisplayName("사용자 ID와 스키마 이름이 주어지면, 테이블 스키마를 삭제한다.")
+    @Test
+    void givenUserIdAndSchemaName_whenDeleting_thenDeletesTableSchema() {
+        // Given
+        String userId = "userId";
+        String schemaName = "table1";
+        willDoNothing().given(tableSchemaRepository).deleteByUserIdAndSchemaName(userId, schemaName);
+
+        // When
+        sut.deleteTableSchema(userId, schemaName);
+
+        // Then
+        then(tableSchemaRepository).should().deleteByUserIdAndSchemaName(userId, schemaName);
+    }
+
 
 }
