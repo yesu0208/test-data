@@ -55,11 +55,14 @@ public class TableSchemaController {
 
     @PostMapping("/table-schema")
     public String createOrUpdateTableSchema(
+            @AuthenticationPrincipal GithubUser githubUser,
             TableSchemaRequest tableSchemaRequest,
             RedirectAttributes redirectAttrs
     ) { // tableSchemaRequest를 form data로 받아 작업을 하고, "/table-schema"로 redirect할 때 이 정보를 전달하면 어떻까?
         // redirection하면서 열릴 페이지에 내가 만들었던 것 유지하고 싶다. -> 이를 위해 RedirectAttributes가 필요
         redirectAttrs.addFlashAttribute("tableSchemaRequest", tableSchemaRequest);
+
+        tableSchemaService.saveMySchema(tableSchemaRequest.toDto(githubUser.id()));
 
         return "redirect:/table-schema";
     }

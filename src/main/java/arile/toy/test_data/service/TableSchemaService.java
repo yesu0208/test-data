@@ -42,4 +42,11 @@ public class TableSchemaService {
     }
 
 
+
+
+
+    public void saveMySchema(TableSchemaDto dto){
+        tableSchemaRepository.save(dto.createEntity());
+    }
+
 }

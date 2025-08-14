@@ -15,12 +15,12 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.catchThrowable;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.*;
 
 @DisplayName("[Service] 테이블 스키마 서비스 테스트")
 @ExtendWith(MockitoExtension.class)
@@ -88,5 +88,21 @@ class TableSchemaServiceTest {
                 .hasMessage("테이블 스키마가 없습니다 - userId: " + userId + ", schemaName: " + schemaName);
         then(tableSchemaRepository).should().findByUserIdAndSchemaName(userId, schemaName);
     }
+
+
+    @DisplayName("존재하지 않는 테이블 스키마 정보가 주어지면, 테이블 스키마를 추가한다.")
+    @Test
+    void givenNonexistentTableSchema_whenUpserting_thenCreatesTableSchema() {
+        // Given
+        TableSchemaDto dto = TableSchemaDto.of("table1", "userId", null, Set.of());
+        given(tableSchemaRepository.save(dto.createEntity())).willReturn(null);
+
+        // When
+        sut.saveMySchema(dto);
+
+        // Then
+        then(tableSchemaRepository).should().save(dto.createEntity());
+    }
+
 
 }
