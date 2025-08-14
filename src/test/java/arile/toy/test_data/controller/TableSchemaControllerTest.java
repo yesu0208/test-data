@@ -6,6 +6,7 @@ import arile.toy.test_data.domain.constant.MockDataType;
 import arile.toy.test_data.dto.request.SchemaFieldRequest;
 import arile.toy.test_data.dto.request.TableSchemaExportRequest;
 import arile.toy.test_data.dto.request.TableSchemaRequest;
+import arile.toy.test_data.dto.security.GithubUser;
 import arile.toy.test_data.util.FormDataEncoder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Disabled;
@@ -22,6 +23,7 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -54,12 +56,14 @@ public record TableSchemaControllerTest(@Autowired MockMvc mvc,
     @Test
     void givenAuthenticatedUserAndSchemaName_whenRequesting_thenShowsTableSchemaView() throws Exception {
         // Given
+        var githubUser = new GithubUser("test-id", "test-name", "test@email.com");
         var schemaName = "test_schema";
 
         // When & Then
         mvc.perform(
                 get("/table-schema")
                         .queryParam("schemaName", schemaName)
+                        .with(oauth2Login().oauth2User(githubUser))
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
@@ -75,6 +79,7 @@ public record TableSchemaControllerTest(@Autowired MockMvc mvc,
     @Test
     void givenTableSchemaRequest_whenCreatingOrUpdating_thenRedirectsToTableSchemaView() throws Exception { // redirect : 저장, 수정 후 table schema view로 돌아올 것
         // Given (테이블 스키마 request 생성)
+        var githubUser = new GithubUser("test-id", "test-name", "test@email.com");
         TableSchemaRequest request = TableSchemaRequest.of(
                 "test-schema",
                 "홍길동",
@@ -90,34 +95,53 @@ public record TableSchemaControllerTest(@Autowired MockMvc mvc,
                         .content(formDataEncoder.encode(request)) // post에 data가 들어갈 것 : 여기는 나중에 바꿔야 함. (변경 완료)
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED) // APPLICATION_JSON type이 아닌 form 요청
                         .with(csrf()) // 이 POST 요청은 자동으로 csrf정보가 포함해서 들어가게 될 것.
+                        .with(oauth2Login().oauth2User(githubUser))
                 )
                 .andExpect(status().is3xxRedirection()) // 3xx : 정상 응답이지만, redirection이 일어났다는 http status code
                 .andExpect(flash().attribute("tableSchemaRequest", request)) // FlashAttribute 검증
                 .andExpect(redirectedUrl("/table-schema"));
     }
 
+    // 1
     @DisplayName("[GET] 내 스키마 목록 페이지 -> 내 스키마 목록 뷰 (정상)")
     @Test
     void givenAuthenticatedUser_whenRequesting_thenShowsMySchemaView() throws Exception {
         // Given
-
+        var githubUser = new GithubUser("test-id", "test-name", "test@email.com");
         // When & Then
-        mvc.perform(get("/table-schema/my-schemas"))
+        mvc.perform(get("/table-schema/my-schemas")
+                        .with(oauth2Login().oauth2User(githubUser))
+                )
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
                 .andExpect((model().attributeExists("tableSchemas")))
                 .andExpect(view().name("my-schemas"));
     }
 
+    // 2
+    @DisplayName("[GET] 내 스키마 목록 페이지 -> 내 스키마 목록 뷰 (비로그인 상태에서는?) -> redirection")
+    @Test
+    void givenNothing_whenRequesting_thenRedirectsToLogin() throws Exception {
+        // Given
+
+        // When & Then
+        mvc.perform(get("/table-schema/my-schemas"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("**/oauth2/authorization/github"));
+    }
+
+
     @DisplayName("[POST] 내 스키마 삭제 (정상)") // DELETE 안쓰고 POST 쓸 것
     @Test
     void givenAuthenticatedUserAndSchemaName_whenDeleting_thenRedirectsToTableSchemaView() throws Exception {
         // Given
+        var githubUser = new GithubUser("test-id", "test-name", "test@email.com");
         String schemaName = "test_schema";
 
         // When & Then
         mvc.perform(post("/table-schema/my-schemas/{schemaName}", schemaName)
                         .with(csrf())
+                        .with(oauth2Login().oauth2User(githubUser))
                 )
                 .andExpect(status().is3xxRedirection()) // 3xx : 정상 응답이지만, redirection이 일어났다는 http status code
                 .andExpect(redirectedUrl("/table-schema/my-schemas"));
