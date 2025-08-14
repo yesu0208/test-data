@@ -18,7 +18,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-//@Disabled("아직 테스트만 다루므로 테스트를 먼저 작성함. 테스트의 스펙을 전달하고, 아직 구현이 없으므로 빟활성화.")
+@Disabled("아직 테스트만 다루므로 테스트를 먼저 작성함. 테스트의 스펙을 전달하고, 아직 구현이 없으므로 빟활성화.")
 @DisplayName("[Controller] 회원 컨트룰러 테스트")
 @Import(SecurityConfig.class)
 @WebMvcTest

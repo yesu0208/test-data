@@ -3,10 +3,13 @@ package arile.toy.test_data.controller;
 import arile.toy.test_data.config.SecurityConfig;
 import arile.toy.test_data.domain.constant.ExportFileType;
 import arile.toy.test_data.domain.constant.MockDataType;
+import arile.toy.test_data.dto.TableSchemaDto;
 import arile.toy.test_data.dto.request.SchemaFieldRequest;
 import arile.toy.test_data.dto.request.TableSchemaExportRequest;
 import arile.toy.test_data.dto.request.TableSchemaRequest;
+import arile.toy.test_data.dto.response.SimpleTableSchemaResponse;
 import arile.toy.test_data.dto.security.GithubUser;
+import arile.toy.test_data.service.TableSchemaService;
 import arile.toy.test_data.util.FormDataEncoder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Disabled;
@@ -17,11 +20,15 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -31,12 +38,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 //@Disabled("아직 테스트만 다루므로 테스트를 먼저 작성함. 테스트의 스펙을 전달하고, 아직 구현이 없으므로 빟활성화.")
 @DisplayName("[Controller] 테이블 스키마 컨트룰러 테스트")
 @Import({SecurityConfig.class, FormDataEncoder.class})
-@WebMvcTest
-public record TableSchemaControllerTest(@Autowired MockMvc mvc,
-                                        @Autowired FormDataEncoder formDataEncoder,
-                                        @Autowired ObjectMapper mapper) {
+@WebMvcTest(TableSchemaController.class)
+class TableSchemaControllerTest {
 
-    // String parameter(schemaName)가 안 오는 경우
+    @Autowired private MockMvc mvc;
+    @Autowired private FormDataEncoder formDataEncoder;
+    @Autowired private ObjectMapper mapper;
+
+    @MockitoBean private TableSchemaService tableSchemaService;
+
+
+    // String parameter(schemaName)가 안 오는 경우(비로그인)
     @DisplayName("[GET] 테이블 스키마 페이지 -> 테이블 스키마 뷰 (정상)")
     @Test
     void givenNothing_whenRequesting_thenShowsTableSchemaView() throws Exception {
@@ -50,14 +62,16 @@ public record TableSchemaControllerTest(@Autowired MockMvc mvc,
                 .andExpect(model().attributeExists("mockDataTypes"))
                 .andExpect(model().attributeExists("fileTypes"))
                 .andExpect(view().name("table-schema"));
+        then(tableSchemaService).shouldHaveNoInteractions();
     }
-    // String parameter(schemaName가 오는 경우
+    // String parameter(schemaName가 오는 경우(로그인)
     @DisplayName("[GET] 테이블 스키마 조회, 로그인 -> 특정 테이블 스키마 (정상)")
     @Test
     void givenAuthenticatedUserAndSchemaName_whenRequesting_thenShowsTableSchemaView() throws Exception {
         // Given
         var githubUser = new GithubUser("test-id", "test-name", "test@email.com");
         var schemaName = "test_schema";
+        given(tableSchemaService.loadMySchema(githubUser.id(), schemaName)).willReturn(TableSchemaDto.of(schemaName, githubUser.id(), null, Set.of()));
 
         // When & Then
         mvc.perform(
@@ -73,6 +87,7 @@ public record TableSchemaControllerTest(@Autowired MockMvc mvc,
                 .andExpect(model().attributeExists("fileTypes"))
                 .andExpect(content().string(containsString(schemaName))) // html 전체 검사하므로 정확하지 않은 테스트 방식 (위의 테스트를 못하므로, 간접적으로)
                 .andExpect(view().name("table-schema"));
+        then(tableSchemaService).should().loadMySchema(githubUser.id(), schemaName);
     }
 
     @DisplayName("[POST] 테이블 스키마 생성, 변경 (정상)") // 한 페이지에서, 저장되지 않은 경우는 새롭게 생성하고, 저장한 것을 불러온 경우라면 수정하고 : ui는 동일한데
@@ -108,14 +123,16 @@ public record TableSchemaControllerTest(@Autowired MockMvc mvc,
     void givenAuthenticatedUser_whenRequesting_thenShowsMySchemaView() throws Exception {
         // Given
         var githubUser = new GithubUser("test-id", "test-name", "test@email.com");
+        given(tableSchemaService.loadMySchemas(githubUser.id())).willReturn(List.of());
         // When & Then
         mvc.perform(get("/table-schema/my-schemas")
                         .with(oauth2Login().oauth2User(githubUser))
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
-                .andExpect((model().attributeExists("tableSchemas")))
+                .andExpect((model().attribute("tableSchemas", List.of())))
                 .andExpect(view().name("my-schemas"));
+        then(tableSchemaService).should().loadMySchemas(githubUser.id());
     }
 
     // 2
@@ -128,6 +145,7 @@ public record TableSchemaControllerTest(@Autowired MockMvc mvc,
         mvc.perform(get("/table-schema/my-schemas"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrlPattern("**/oauth2/authorization/github"));
+        then(tableSchemaService).shouldHaveNoInteractions();
     }
 
 

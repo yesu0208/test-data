@@ -7,11 +7,14 @@ import arile.toy.test_data.dto.request.TableSchemaRequest;
 import arile.toy.test_data.dto.response.SchemaFieldResponse;
 import arile.toy.test_data.dto.response.SimpleTableSchemaResponse;
 import arile.toy.test_data.dto.response.TableSchemaResponse;
+import arile.toy.test_data.dto.security.GithubUser;
+import arile.toy.test_data.service.TableSchemaService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,14 +31,20 @@ import java.util.List;
 @Controller
 public class TableSchemaController {
 
+    private final TableSchemaService tableSchemaService;
     private final ObjectMapper mapper;
 
+    // 비로그인을 하면 sample schema, 로그인 하고 schema 이름 알면 그 schema를 단건 조회
     @GetMapping("/table-schema")
     public String tableSchema(
+            @AuthenticationPrincipal GithubUser githubUser,
             @RequestParam(required = false) String schemaName,
             Model model) {
         // tableSchema의 기본 화면 정보 값들
-        var tableSchema = defaultTableSchema(schemaName);
+        TableSchemaResponse tableSchema = (githubUser != null && schemaName != null) ?
+                TableSchemaResponse.fromDto(tableSchemaService.loadMySchema(githubUser.id(), schemaName)) :
+                defaultTableSchema(schemaName);
+
         model.addAttribute("tableSchema", tableSchema);
         model.addAttribute("mockDataTypes", MockDataType.toObjects());
         model.addAttribute("fileTypes", Arrays.stream(ExportFileType.values()).toList());
@@ -56,8 +65,13 @@ public class TableSchemaController {
     }
 
     @GetMapping("/table-schema/my-schemas")
-    public String mySchemas(Model model) {
-        var tableSchemas = mySampleSchemas();
+    public String mySchemas(
+            @AuthenticationPrincipal GithubUser githubUser,
+            Model model) {
+        List<SimpleTableSchemaResponse> tableSchemas = tableSchemaService.loadMySchemas(githubUser.id())
+                .stream()
+                .map(SimpleTableSchemaResponse::fromDto)
+                .toList();
 
         model.addAttribute("tableSchemas", tableSchemas);
 
