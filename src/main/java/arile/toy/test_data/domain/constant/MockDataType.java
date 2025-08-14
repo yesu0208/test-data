@@ -3,6 +3,8 @@ package arile.toy.test_data.domain.constant;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 
@@ -27,6 +29,14 @@ public enum MockDataType {
 
     private final Set<String> requiredOptions;
     private final MockDataType baseType;
+
+    private static final List<MockDataTypeObject> objects =
+            Arrays.stream(MockDataType.values()).map(MockDataType::toObject).toList();
+
+    public static List<MockDataTypeObject> toObjects() {
+        return objects; // 이제 method 호출할 때마다 변환 작업 필요 x (static final 필드로 정의)
+
+    }
 
     MockDataType(Set<String> requiredOptions, MockDataType baseType) {
         this.requiredOptions = requiredOptions;
