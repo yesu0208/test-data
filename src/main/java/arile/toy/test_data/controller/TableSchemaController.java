@@ -8,6 +8,7 @@ import arile.toy.test_data.dto.response.SchemaFieldResponse;
 import arile.toy.test_data.dto.response.SimpleTableSchemaResponse;
 import arile.toy.test_data.dto.response.TableSchemaResponse;
 import arile.toy.test_data.dto.security.GithubUser;
+import arile.toy.test_data.service.SchemaExportService;
 import arile.toy.test_data.service.TableSchemaService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,6 +33,7 @@ import java.util.List;
 public class TableSchemaController {
 
     private final TableSchemaService tableSchemaService;
+    private final SchemaExportService schemaExportService;
     private final ObjectMapper mapper;
 
     // 비로그인을 하면 sample schema, 로그인 하고 schema 이름 알면 그 schema를 단건 조회
@@ -93,26 +95,30 @@ public class TableSchemaController {
 
     //@ResponseBody
     @GetMapping("/table-schema/export")
-    public ResponseEntity<String> exportTableSchema(TableSchemaExportRequest tableSchemaExportRequest) {
+    public ResponseEntity<String> exportTableSchema(
+            @AuthenticationPrincipal GithubUser githubUser,
+            TableSchemaExportRequest tableSchemaExportRequest) {
+        String body = schemaExportService.export(
+                tableSchemaExportRequest.fileType(),
+                tableSchemaExportRequest.toDto(githubUser != null ? githubUser.id() : null), // null인 경우 고려(로그인 안 한 경우)
+                tableSchemaExportRequest.rowCount());
+
+        String fileName = tableSchemaExportRequest.schemaName() + "." + tableSchemaExportRequest.fileType().name().toLowerCase();
+
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=table-schema.txt")
-                .body(json(tableSchemaExportRequest)); // TODO: 니증에 데이터 바꿔야 함
+                .body(body); // TODO: 니증에 데이터 바꿔야 함
     }
 
-    private String json(Object object){
+
+    private String json(Object object) {
         try {
             return mapper.writeValueAsString(object);
         } catch (JsonProcessingException jpe) {
             throw new RuntimeException(jpe); // RuntimeException 으로 감싸서 내보내면 위로 전파해도 문제 x
         }
     }
-
-
-
-
-
-
 
 
     private TableSchemaResponse defaultTableSchema(String schemaName) {

@@ -8,6 +8,7 @@ import arile.toy.test_data.dto.request.SchemaFieldRequest;
 import arile.toy.test_data.dto.request.TableSchemaExportRequest;
 import arile.toy.test_data.dto.request.TableSchemaRequest;
 import arile.toy.test_data.dto.security.GithubUser;
+import arile.toy.test_data.service.SchemaExportService;
 import arile.toy.test_data.service.TableSchemaService;
 import arile.toy.test_data.util.FormDataEncoder;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,6 +44,7 @@ class TableSchemaControllerTest {
     @Autowired private ObjectMapper mapper;
 
     @MockitoBean private TableSchemaService tableSchemaService;
+    @MockitoBean private SchemaExportService schemaExportService;
 
 
     // String parameter(schemaName)가 안 오는 경우(비로그인)
@@ -165,7 +167,7 @@ class TableSchemaControllerTest {
         then(tableSchemaService).should().deleteTableSchema(githubUser.id(), schemaName);
     }
 
-    @DisplayName("[GET] 테이블 스키마 파일 다운로드 -> 테이블 스키마 파일 (정상)")
+    @DisplayName("[GET] 테이블 스키마 파일 다운로드 -> 테이블 스키마 파일 (비로그인, 정상)")
     @Test
     void givenTableSchema_whenDownloading_thenReturnsFile() throws Exception {
         // Given
@@ -180,12 +182,50 @@ class TableSchemaControllerTest {
                 )
         );
         String queryParam = formDataEncoder.encode(request, false);
+        String expectedBody = "id,name,age\n1,uno,20";
+        given(schemaExportService.export(request.fileType(), request.toDto(null), request.rowCount()))
+                .willReturn(expectedBody);
         // When & Then
         mvc.perform(get("/table-schema/export?" + queryParam))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)) // csv, tsv든 모두 plain type
                 // "Content-Disposition" 헤더에 "attachment; filename=table-schema.txt"이 들어있어야. (파일은 table-schema.txt으로 나올 것)
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=table-schema.txt")) // 파일 다운로드 하려면 헤더에 반드시 추가되어야 하는 내용
-                .andExpect(content().json(mapper.writeValueAsString(request))); // TODO: 나중에 데이터 바꿔야 함
+                .andExpect(content().string(expectedBody));
+        then(schemaExportService).should().export(request.fileType(), request.toDto(null), request.rowCount());
     }
+
+
+    @DisplayName("[GET] 테이블 스키마 파일 다운로드 -> 테이블 스키마 파일 (로그인, 정상)")
+    @Test
+    void givenAuthenticatedUserAndTableSchema_whenDownloading_thenReturnsFile() throws Exception {
+        // Given
+        var githubUser = new GithubUser("test-id", "test-name", "test@email.com");
+        TableSchemaExportRequest request = TableSchemaExportRequest.of(
+                "test",
+                77,
+                ExportFileType.JSON,
+                List.of(
+                        SchemaFieldRequest.of("id", MockDataType.ROW_NUMBER, 1, 0, null, null),
+                        SchemaFieldRequest.of("name", MockDataType.STRING, 1, 0, "option", "well"),
+                        SchemaFieldRequest.of("age", MockDataType.NUMBER, 3, 20, null, null)
+                )
+        );
+        String queryParam = formDataEncoder.encode(request, false);
+        String expectedBody = "id,name,age\n1,uno,20";
+        given(schemaExportService.export(request.fileType(), request.toDto(githubUser.id()), request.rowCount()))
+                .willReturn(expectedBody);
+        // When & Then
+        mvc.perform(get("/table-schema/export?" + queryParam)
+                        .with(oauth2Login().oauth2User(githubUser))
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)) // csv, tsv든 모두 plain type
+                // "Content-Disposition" 헤더에 "attachment; filename=table-schema.txt"이 들어있어야. (파일은 table-schema.txt으로 나올 것)
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=table-schema.txt")) // 파일 다운로드 하려면 헤더에 반드시 추가되어야 하는 내용
+                .andExpect(content().string(expectedBody));
+        then(schemaExportService).should().export(request.fileType(), request.toDto(githubUser.id()), request.rowCount());
+    }
+
+
 }
