@@ -45,8 +45,13 @@ public class TableSchemaService {
 
 
 
-    public void saveMySchema(TableSchemaDto dto){
-        tableSchemaRepository.save(dto.createEntity());
+    public void upsertTableSchema(TableSchemaDto dto){
+        tableSchemaRepository.findByUserIdAndSchemaName(dto.userId(), dto.schemaName())
+                        .ifPresentOrElse( // optional
+                                entity -> tableSchemaRepository.save(dto.updateEntity(entity)),
+                                () -> tableSchemaRepository.save(dto.createEntity())
+                        );
+
     }
 
 }

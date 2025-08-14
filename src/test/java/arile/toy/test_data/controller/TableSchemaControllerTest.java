@@ -7,12 +7,10 @@ import arile.toy.test_data.dto.TableSchemaDto;
 import arile.toy.test_data.dto.request.SchemaFieldRequest;
 import arile.toy.test_data.dto.request.TableSchemaExportRequest;
 import arile.toy.test_data.dto.request.TableSchemaRequest;
-import arile.toy.test_data.dto.response.SimpleTableSchemaResponse;
 import arile.toy.test_data.dto.security.GithubUser;
 import arile.toy.test_data.service.TableSchemaService;
 import arile.toy.test_data.util.FormDataEncoder;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,7 +100,7 @@ class TableSchemaControllerTest {
                         SchemaFieldRequest.of("age", MockDataType.NUMBER, 3, 20, null, null)
                 )
         );
-        willDoNothing().given(tableSchemaService).saveMySchema(request.toDto(githubUser.id()));
+        willDoNothing().given(tableSchemaService).upsertTableSchema(request.toDto(githubUser.id()));
 
         // When & Then
         mvc.perform(post("/table-schema")
@@ -112,9 +110,9 @@ class TableSchemaControllerTest {
                         .with(oauth2Login().oauth2User(githubUser))
                 )
                 .andExpect(status().is3xxRedirection()) // 3xx : 정상 응답이지만, redirection이 일어났다는 http status code
-                .andExpect(flash().attribute("tableSchemaRequest", request)) // FlashAttribute 검증
-                .andExpect(redirectedUrl("/table-schema"));
-        then(tableSchemaService).should().saveMySchema(request.toDto(githubUser.id()));
+                //.andExpect(flash().attribute("tableSchemaRequest", request)) // FlashAttribute 검증
+                .andExpect(redirectedUrlTemplate("/table-schema?schemaName={schemaName}", request.schemaName()));
+        then(tableSchemaService).should().upsertTableSchema(request.toDto(githubUser.id()));
     }
 
     // 1

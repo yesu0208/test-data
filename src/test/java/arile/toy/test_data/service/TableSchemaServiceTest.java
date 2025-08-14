@@ -19,7 +19,6 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.catchThrowable;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
 @DisplayName("[Service] 테이블 스키마 서비스 테스트")
@@ -98,9 +97,27 @@ class TableSchemaServiceTest {
         given(tableSchemaRepository.save(dto.createEntity())).willReturn(null);
 
         // When
-        sut.saveMySchema(dto);
+        sut.upsertTableSchema(dto);
 
         // Then
+        then(tableSchemaRepository).should().save(dto.createEntity());
+    }
+
+    @DisplayName("존재하는 테이블 스키마 정보가 주어지면, 테이블 스키마를 수정한다.")
+    @Test
+    void givenExistentTableSchema_whenUpserting_thenUpdatesTableSchema() {
+        // Given
+        TableSchemaDto dto = TableSchemaDto.of("table1", "userId", null, Set.of());
+        TableSchema existingTableSchema = TableSchema.of(dto.schemaName(), dto.userId());
+        given(tableSchemaRepository.findByUserIdAndSchemaName(dto.userId(), dto.schemaName()))
+                .willReturn(Optional.of(existingTableSchema));
+        given(tableSchemaRepository.save(dto.createEntity())).willReturn(null);
+
+        // When
+        sut.upsertTableSchema(dto);
+
+        // Then
+        then(tableSchemaRepository).should().findByUserIdAndSchemaName(dto.userId(), dto.schemaName());
         then(tableSchemaRepository).should().save(dto.createEntity());
     }
 
