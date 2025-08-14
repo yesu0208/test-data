@@ -49,4 +49,16 @@ public record TableSchemaDto(
 
         return entity;
     }
+
+    public TableSchema updateEntity(TableSchema entity) {
+        if (schemaName != null) entity.setSchemaName(schemaName); // null로 요청이 들어오면 무시
+        if (userId != null) entity.setUserId(userId);
+        entity.setExportedAt(exportedAt);
+        if (schemaFields != null) {
+            entity.clearSchemaFields();
+            entity.addSchemaFields(schemaFields.stream().map(SchemaFieldDto::createEntity).toList());
+        }
+
+        return entity;
+    }
 }
