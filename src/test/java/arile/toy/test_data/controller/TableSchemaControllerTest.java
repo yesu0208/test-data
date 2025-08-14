@@ -1,10 +1,13 @@
 package arile.toy.test_data.controller;
 
 import arile.toy.test_data.config.SecurityConfig;
+import arile.toy.test_data.domain.constant.ExportFileType;
 import arile.toy.test_data.domain.constant.MockDataType;
 import arile.toy.test_data.dto.request.SchemaFieldRequest;
+import arile.toy.test_data.dto.request.TableSchemaExportRequest;
 import arile.toy.test_data.dto.request.TableSchemaRequest;
 import arile.toy.test_data.util.FormDataEncoder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,7 +30,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({SecurityConfig.class, FormDataEncoder.class})
 @WebMvcTest
 public record TableSchemaControllerTest(@Autowired MockMvc mvc,
-                                        @Autowired FormDataEncoder formDataEncoder) {
+                                        @Autowired FormDataEncoder formDataEncoder,
+                                        @Autowired ObjectMapper mapper) {
 
     @DisplayName("[GET] 테이블 스키마 페이지 -> 테이블 스키마 뷰 (정상)")
     @Test
@@ -38,6 +42,9 @@ public record TableSchemaControllerTest(@Autowired MockMvc mvc,
         mvc.perform(get("/table-schema"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("tableSchema"))
+                .andExpect(model().attributeExists("mockDataTypes"))
+                .andExpect(model().attributeExists("fileTypes"))
                 .andExpect(view().name("table-schema"));
     }
 
@@ -96,13 +103,23 @@ public record TableSchemaControllerTest(@Autowired MockMvc mvc,
     @Test
     void givenTableSchema_whenDownloading_thenReturnsFile() throws Exception {
         // Given
-
+        TableSchemaExportRequest request = TableSchemaExportRequest.of(
+                "test",
+                77,
+                ExportFileType.JSON,
+                List.of(
+                        SchemaFieldRequest.of("id", MockDataType.ROW_NUMBER, 1, 0, null, null),
+                        SchemaFieldRequest.of("name", MockDataType.STRING, 1, 0, "option", "well"),
+                        SchemaFieldRequest.of("age", MockDataType.NUMBER, 3, 20, null, null)
+                )
+        );
+        String queryParam = formDataEncoder.encode(request, false);
         // When & Then
-        mvc.perform(get("/table-schema/export"))
+        mvc.perform(get("/table-schema/export?" + queryParam))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)) // csv, tsv든 모두 plain type
                 // "Content-Disposition" 헤더에 "attachment; filename=table-schema.txt"이 들어있어야. (파일은 table-schema.txt으로 나올 것)
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=table-schema.txt")) // 파일 다운로드 하려면 헤더에 반드시 추가되어야 하는 내용
-                .andExpect(content().string("download complete!")); // TODO: 나중에 데이터 바꿔야 함
+                .andExpect(content().json(mapper.writeValueAsString(request))); // TODO: 나중에 데이터 바꿔야 함
     }
 }
