@@ -120,7 +120,7 @@ public record TableSchemaControllerTest(@Autowired MockMvc mvc,
                         .with(csrf())
                 )
                 .andExpect(status().is3xxRedirection()) // 3xx : 정상 응답이지만, redirection이 일어났다는 http status code
-                .andExpect(redirectedUrl("/my-schemas"));
+                .andExpect(redirectedUrl("/table-schema/my-schemas"));
     }
 
     @DisplayName("[GET] 테이블 스키마 파일 다운로드 -> 테이블 스키마 파일 (정상)")
