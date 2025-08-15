@@ -30,7 +30,7 @@ public class MockData {
     private Long id;
 
     @Setter @Column(nullable = false) @Enumerated(EnumType.STRING) MockDataType mockDataType;
-    @Setter @Column(nullable = false, length = 1000) private String mockDataValue;
+    @Setter @Column(nullable = false, length = 100) private String mockDataValue;
 
     protected MockData() {}
 
