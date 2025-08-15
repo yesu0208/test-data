@@ -11,7 +11,7 @@ import java.util.Set;
 @Getter
 public enum MockDataType {
     // base type
-    STRING(Set.of("minLength", "maxLength", "pattern"), null),
+    STRING(Set.of("minLength", "maxLength"), null),
     NUMBER(Set.of("min", "max", "decimals"), null),
     BOOLEAN(Set.of(), null),
     DATETIME(Set.of("from", "to"), null),
